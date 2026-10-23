@@ -852,10 +852,14 @@ function wrap(text: string, width: number) {
 type Box = { x0: number; y0: number; x1: number; y1: number }
 type Placed = { actor: Actor; lines: string[]; x: number; y: number; width: number; alpha: number; look?: ClawdLook }
 
+// The lines the last frame had spoken in bubbles, for the caption under the strip.
+export const said: { lines: string[] } = { lines: [] }
+
 // Draws one frame of a script: backdrop, swarms, actors, then speech on top,
 // with the backdrop cleared around everything that reads.
 export function stage(frame: Stage): string {
   const { cols, rows, t, since, reveal } = frame
+  said.lines = []
   // A scene whose code broke with nothing else to show keeps the last scene
   // on until the narrator's fixed one arrives.
   const isBlank = (s: Script) => Boolean(s.code?.error) && s.actors.length === 0 && s.swarms.length === 0
@@ -965,6 +969,7 @@ export function stage(frame: Stage): string {
     const wide = Math.max(...all.map(line => line.length)) + 4
     const tall = all.length + 2
     if (tall > rows || wide > cols) continue
+    said.lines.push(actor.say)
     const bottom = rows - 1
     const outline = spans(one)
     const drawn = outline.flatMap((span, dy) => (span ? [{ ...span, row: one.y + dy }] : []))
@@ -1172,6 +1177,7 @@ export function stage(frame: Stage): string {
         }
         const { lines, wide, tall } = typedBubble(text, playT - first, cols)
         if (wide > cols || tall > rows) return
+        said.lines.push(text)
         // The speaker is the Clawd last drawn when the point is on or beside
         // it; otherwise the point itself.
         const near = lastClawd && x >= lastClawd.x0 - 2 && x <= lastClawd.x1 + 2 && y >= lastClawd.y0 - 1 && y <= lastClawd.y1 + 1

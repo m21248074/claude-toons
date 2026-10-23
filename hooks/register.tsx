@@ -22,7 +22,8 @@ import {
 import { createDealer, deal, isInteresting, isStockDue, phaseOf, whatOf, type Dealer, type Phase } from './library'
 import { STYLE_SETS, URL, createThread, isStyleSet, type Narration, type StyleSet } from './narrator'
 import { SCENES } from './scenes'
-import { cleanScript, stage, type Script } from './script'
+import { cleanScript, said, stage, type Script } from './script'
+import { captionLine } from './zh'
 
 // zh-TW: display labels only; the keys on the left are what the code stores and compares.
 const PACE_ZH: Record<string, string> = {
@@ -149,6 +150,8 @@ type Buddy = {
   cols: number
   shownAt: number
   drawnRows: number
+  // The zh-TW caption for what the bubbles say now, drawn under the strip.
+  caption: string
   // Whether the session's login refused these requests: no more are made.
   isRefused: boolean
   // Tool calls running now with when each began, and the spinner's phase.
@@ -204,6 +207,7 @@ function createBuddy(model: Model, pace: Pace, isThinking: boolean, styles: Styl
     cols: 60,
     shownAt: 0,
     drawnRows: 1,
+    caption: '',
     isRefused: false,
     running: new Map(),
     callCount: 0,
@@ -466,6 +470,11 @@ function animate($: EngineInterface, b: Buddy) {
       // the height drawn until it lands.
       if (rowsAt(b, at) !== b.drawnRows) $.ui.invalidate('ui.render')
       const frame = frameAt(b, at, b.drawnRows)
+      const caption = captionLine(said.lines, b.cols)
+      if (caption !== b.caption) {
+        b.caption = caption
+        $.ui.invalidate('ui.render')
+      }
       await $.ui.blit({ requestId: b.spinner, key: 'oracle', cells: frame, columns: b.cols, rows: b.drawnRows }).catch(() => {})
       await $.clock.sleep(50)
     }
@@ -720,7 +729,7 @@ export const register: Register = (on, options) => {
 
       return spinnerLine
     }
-    const { Box, Raster } = $.ui.resolve(e)
+    const { Box, Raster, Text } = $.ui.resolve(e)
     // The spinner knows when Claude turns to thinking or to writing its reply.
     const nextPhase = e.props.mode === 'thinking' ? 'thinking' : e.props.mode === 'responding' ? 'writing the reply' : ''
     if (b.isTurn && nextPhase && nextPhase !== b.phase) {
@@ -738,6 +747,7 @@ export const register: Register = (on, options) => {
     b.cols = Math.max(20, Math.min(220, (e.viewport?.columns ?? 80) - 6))
     b.drawnRows = rowsAt(b, now)
     const cells = frameAt(b, now, b.drawnRows)
+    b.caption = captionLine(said.lines, b.cols)
     if (b.sceneAt === 0) b.sceneAt = now
     animate($, b)
 
@@ -745,6 +755,7 @@ export const register: Register = (on, options) => {
       <Box flexDirection="column">
         {spinnerLine}
         <Raster key="oracle" columns={b.cols} rows={b.drawnRows} cells={cells} />
+        <Text dimColor>{b.caption || ' '}</Text>
       </Box>
     )
   })
