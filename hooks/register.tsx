@@ -24,6 +24,21 @@ import { STYLE_SETS, URL, createThread, isStyleSet, type Narration, type StyleSe
 import { SCENES } from './scenes'
 import { cleanScript, stage, type Script } from './script'
 
+// zh-TW: display labels only; the keys on the left are what the code stores and compares.
+const PACE_ZH: Record<string, string> = {
+  'as fast as possible': '越快越好',
+  'every 15 seconds': '每 15 秒',
+  'every 30 seconds': '每 30 秒',
+  'every minute': '每分鐘',
+}
+const STYLE_ZH: Record<string, string> = {
+  mix: '混合(3D、像素畫、文字畫)',
+  '3D': '3D',
+  'pixel art': '像素畫',
+  'text art': '文字畫',
+  'no 3D': '不含 3D',
+}
+
 const PLUGIN = 'toons'
 const ROWS = 9
 // How long the band takes to rise to its full height when the spinner shows.
@@ -435,7 +450,7 @@ async function setOption($: EngineInterface, field: string, value: string) {
     const { deny } = await $.config.set({ key: row.key, value })
     if (deny) throw new Error(deny)
   } catch (e) {
-    $.ui.toast(`toons: could not change ${field}: ${e instanceof Error ? e.message : String(e)}`)
+    $.ui.toast(`toons: 無法變更 ${field}:${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
@@ -475,7 +490,7 @@ export const register: Register = (on, options) => {
     b.stats = cleanStats(await $.store.get('stats'))
     await $.command.register({
       name: COMMAND,
-      description: 'Show or hide the cartoons under the spinner; "/toons settings" for the model, pace and cost',
+      description: '顯示或隱藏轉圈圈下方的動畫;"/toons settings" 可設定模型、頻率和費用',
       argumentHint: '[on|off|settings]',
       immediate: true,
     })
@@ -488,14 +503,14 @@ export const register: Register = (on, options) => {
     if (arg === 'settings') {
       await $.ui.open({ id: PANE, title: 'Toons', focus: true, closeOnEscape: true, rows: 22 })
 
-      return { text: 'Toons settings opened.' }
+      return { text: 'Toons 設定已開啟。' }
     }
     await toggle($, b, arg === 'on' ? true : arg === 'off' ? false : !b.isShown)
 
     return {
       text: b.isShown
-        ? `Cartoons on (${MODEL_NAMES[b.model]}, a new scene ${b.pace}). /toons settings shows what they cost.`
-        : 'Cartoons off: no scenes are requested or drawn until you turn them back on with /toons.',
+        ? `動畫已開啟(${MODEL_NAMES[b.model]},新場景${PACE_ZH[b.pace] ?? b.pace})。/toons settings 可看費用。`
+        : '動畫已關閉:在你用 /toons 重新開啟之前,不會請求或繪製任何場景。',
     }
   })
 
@@ -567,7 +582,7 @@ export const register: Register = (on, options) => {
     if (e.surface === 'mobile') {
       const { Text } = $.ui.resolve(e)
 
-      return <Text>Cartoons cost about {money(cost.hour.usd)} per hour of Claude working. Change settings in the terminal.</Text>
+      return <Text>動畫費用約為 Claude 每工作一小時 {money(cost.hour.usd)}。請在終端機中變更設定。</Text>
     }
     const { Box, Text, Select } = $.ui.resolve(e)
     // A label and its value on one line, the labels in one column.
@@ -593,77 +608,77 @@ export const register: Register = (on, options) => {
       <Box flexDirection="column" paddingX={1}>
         <Select
           key="shown"
-          label="Cartoons          "
-          options={[{ value: 'shown' }, { value: 'hidden' }]}
+          label="動畫              "
+          options={[{ value: 'shown', label: '顯示' }, { value: 'hidden', label: '隱藏' }]}
           value={b.isShown ? 'shown' : 'hidden'}
           autoFocus
           onSelect={(value: string) => void toggle($, b, value === 'shown')}
         />
         <Select
           key="model"
-          label="Director model    "
+          label="導演模型          "
           options={MODELS.map(m => ({ value: m, label: MODEL_NAMES[m] }))}
           value={b.model}
           onSelect={(value: string) => void setOption($, 'model', value)}
         />
         <Select
           key="pace"
-          label="New scene         "
-          options={PACES.map(p => ({ value: p }))}
+          label="新場景頻率        "
+          options={PACES.map(p => ({ value: p, label: PACE_ZH[p] ?? p }))}
           value={b.pace}
           onSelect={(value: string) => void setOption($, 'pace', value)}
         />
         <Select
           key="thinking"
-          label="Director thinks   "
-          options={[{ value: 'off', label: 'off (cheaper)' }, { value: 'on' }]}
+          label="導演思考          "
+          options={[{ value: 'off', label: '關(較省)' }, { value: 'on', label: '開' }]}
           value={b.thread.isThinking ? 'on' : 'off'}
           onSelect={(value: string) => void setOption($, 'thinking', value)}
         />
         <Select
           key="library"
-          label="Scenes            "
+          label="場景來源          "
           options={[
-            { value: 'ready-made only', label: 'ready-made only: free, no tokens used' },
-            { value: 'mix', label: 'mix: ready-made, fresh ones for news (~1-3% extra)' },
-            { value: 'fresh only', label: 'fresh only: every scene drawn new, uses far more tokens' },
+            { value: 'ready-made only', label: '只用預製:免費,不花 token' },
+            { value: 'mix', label: '混合:預製為主,遇到新事件才現畫(約多 1-3%)' },
+            { value: 'fresh only', label: '全部現畫:每個場景都重畫,token 用量高很多' },
           ]}
           value={b.source}
           onSelect={(value: string) => void setOption($, 'library', value)}
         />
         <Select
           key="styles"
-          label="Scene styles      "
-          options={Object.keys(STYLE_SETS).map(value => ({ value, label: value === 'mix' ? 'mix (3D, pixel art, text art)' : value }))}
+          label="場景風格          "
+          options={Object.keys(STYLE_SETS).map(value => ({ value, label: STYLE_ZH[value] ?? value }))}
           value={b.thread.styles}
           onSelect={(value: string) => void setOption($, 'styles', value)}
         />
-        <Text dimColor>Toggle any time with /toons, even while Claude works</Text>
+        <Text dimColor>隨時可用 /toons 開關,Claude 工作中也可以</Text>
 
         {b.isFree ? (
           <Box flexDirection="column">
-            {heading('Cost')}
-            {row('Cartoons', 'free', 'ready-made scenes only: no requests, no tokens')}
+            {heading('費用')}
+            {row('動畫', '免費', '只用預製場景:不發請求、不花 token')}
           </Box>
         ) : (
           <Box flexDirection="column">
-            {heading('Per hour of Claude working')}
-            {cost.claude ? row("Claude's own work", `~${money(cost.claude.usd)}`, 'measured') : row("Claude's own work", 'not measured yet', 'after ~10 min of Claude working')}
+            {heading('Claude 每工作一小時')}
+            {cost.claude ? row('Claude 本身的工作', `~${money(cost.claude.usd)}`, '已實測') : row('Claude 本身的工作', '尚未實測', 'Claude 工作約 10 分鐘後')}
             {row(
-              'Cartoons',
+              '動畫',
               `~${money(cost.hour.usd)}`,
-              `~${Math.round(cost.hour.scenes)} scenes, ${cost.hour.measuredMinutes !== undefined ? `measured over ${cost.hour.measuredMinutes} min` : 'estimate'}`,
+              `約 ${Math.round(cost.hour.scenes)} 個場景,${cost.hour.measuredMinutes !== undefined ? `依 ${cost.hour.measuredMinutes} 分鐘實測` : '估計值'}`,
             )}
             {cost.claude &&
-              row('One scene', money(cost.hour.usd / Math.max(1, cost.hour.scenes)), `costs about ${cost.claude.sceneSeconds < 1 ? 'a second' : `${Math.round(cost.claude.sceneSeconds)} seconds`} of Claude's own work`)}
+              row('單一場景', money(cost.hour.usd / Math.max(1, cost.hour.scenes)), `約等於 Claude 本身工作 ${cost.claude.sceneSeconds < 1 ? '1 秒' : `${Math.round(cost.claude.sceneSeconds)} 秒`}的花費`)}
             {cost.perScene &&
               row(
-                'Per scene',
+                '每個場景',
                 money(cost.perScene.usd),
-                `${Math.round(cost.perScene.outputShare * 100)}% is the scene itself (~${Math.round(cost.perScene.output)} tokens); the rest is the cached history (~${Math.round(cost.perScene.cacheRead / 1000)}k tokens, mostly cache reads)`,
+                `${Math.round(cost.perScene.outputShare * 100)}% 是場景本身(約 ${Math.round(cost.perScene.output)} token);其餘是快取的歷史(約 ${Math.round(cost.perScene.cacheRead / 1000)}k token,多半是快取讀取)`,
               )}
 
-            {heading('Each model at this pace')}
+            {heading('依目前頻率比較各模型')}
             {cost.models.map(m => (
               <Box flexDirection="row">
                 <Box width={18}>
@@ -672,25 +687,25 @@ export const register: Register = (on, options) => {
                   </Text>
                 </Box>
                 <Text bold={m.model === b.model} dimColor={m.model !== b.model}>{`~${money(m.usd)}/hr`}</Text>
-                <Text dimColor>{`  ~${Math.round(m.scenes)} scenes${m.usd === cheapest ? ', cheapest' : ''}`}</Text>
+                <Text dimColor>{`  約 ${Math.round(m.scenes)} 個場景${m.usd === cheapest ? ',最便宜' : ''}`}</Text>
               </Box>
             ))}
           </Box>
         )}
 
-        {heading('Usage')}
-        {cost.windows.length > 0 && row('Your plan', cost.windows.map(w => `${w.label} ${w.percent}%`).join(' · '))}
+        {heading('用量')}
+        {cost.windows.length > 0 && row('你的方案', cost.windows.map(w => `${w.label} ${w.percent}%`).join(' · '))}
         {b.isFree
-          ? row('This session', `${b.sessionStock} ready-made scenes`, 'free')
-          : row('This session', `${b.sessionScenes} scenes · ${money(b.sessionUsd)}`, b.sessionStock > 0 ? `and ${b.sessionStock} ready-made, free` : undefined)}
-        {b.lastTrouble && row('Last scene error', b.lastTrouble.slice(0, 70), 'sent back to the director to fix')}
+          ? row('本次 session', `${b.sessionStock} 個預製場景`, '免費')
+          : row('本次 session', `${b.sessionScenes} 個場景 · ${money(b.sessionUsd)}`, b.sessionStock > 0 ? `另有 ${b.sessionStock} 個預製場景(免費)` : undefined)}
+        {b.lastTrouble && row('上次場景錯誤', b.lastTrouble.slice(0, 70), '已回報給導演修正')}
 
         <Box marginTop={1}>
           <Text dimColor>
             {b.isSubscription
-              ? "On a subscription neither line is charged separately: both count toward the same usage limits, each in proportion to its cost."
-              : "Billed to this session's API key."}{' '}
-            Hidden or idle: nothing.
+              ? '訂閱方案不會另外收這兩項的費用:兩者都計入同一組用量上限,依各自的花費比例分攤。'
+              : '費用會計入這個 session 的 API 金鑰。'}{' '}
+            隱藏或閒置時:不花任何費用。
           </Text>
         </Box>
       </Box>

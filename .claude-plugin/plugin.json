@@ -1,7 +1,7 @@
 {
   "name": "toons",
   "version": "0.1.0",
-  "description": "Animated cartoons of what Claude is doing, drawn under the spinner while it works",
+  "description": "在轉圈圈下方,用動畫畫出 Claude 正在做的事",
   "author": {
     "name": "Anshu Chimala"
   },
@@ -9,8 +9,8 @@
   "userConfig": {
     "model": {
       "type": "string",
-      "title": "Toons: director model",
-      "description": "The model that watches Claude work and directs the cartoons. Haiku is cheapest; Opus is the most inventive. /toons settings shows what each costs.",
+      "title": "Toons:導演模型",
+      "description": "負責觀察 Claude 工作並導演動畫的模型。Haiku 最便宜,Opus 最有創意。/toons settings 可看各模型的費用。",
       "default": "claude-sonnet-5-5",
       "options": [
         "claude-haiku-4-5",
@@ -20,8 +20,8 @@
     },
     "styles": {
       "type": "string",
-      "title": "Toons: scene styles",
-      "description": "Which ways the scenes are drawn: a mix (3D most often, pixel art, text art), one style only, or everything but 3D.",
+      "title": "Toons:場景風格",
+      "description": "場景的畫法:混合(最常是 3D,也有像素畫和文字畫)、只用單一風格,或排除 3D 之外的全部。",
       "default": "mix",
       "options": [
         "mix",
@@ -33,8 +33,8 @@
     },
     "thinking": {
       "type": "string",
-      "title": "Toons: director thinks",
-      "description": "Whether the director model thinks before each scene. Off is cheaper (thinking is billed as output); on may give more inventive scenes. Opus always thinks.",
+      "title": "Toons:導演思考",
+      "description": "導演模型在每個場景前是否先思考。關閉較省(思考會算成輸出 token);開啟可能讓場景更有創意。Opus 一律會思考。",
       "default": "off",
       "options": [
         "off",
@@ -43,8 +43,8 @@
     },
     "library": {
       "type": "string",
-      "title": "Toons: scenes",
-      "description": "Where scenes come from. \"ready-made only\" uses the scenes that ship with the plugin and spends no tokens. \"mix\" (the default) adds a freshly drawn scene for news like a new task or a failure, about 1-3% on top of what Claude Code uses. \"fresh only\" draws every scene new, which uses several times more tokens.",
+      "title": "Toons:場景來源",
+      "description": "場景的來源。\"ready-made only\" 只用外掛內建的預製場景,不花 token。\"mix\"(預設)在遇到新任務或失敗等新事件時,會現畫一個新場景,約比 Claude Code 本身多用 1-3%。\"fresh only\" 每個場景都重新畫,token 用量會高好幾倍。",
       "default": "mix",
       "options": [
         "ready-made only",
@@ -54,8 +54,8 @@
     },
     "pace": {
       "type": "string",
-      "title": "Toons: new scene",
-      "description": "How often a new scene is requested while Claude works. Slower is cheaper; each scene keeps animating until the next arrives.",
+      "title": "Toons:新場景頻率",
+      "description": "Claude 工作時多久請求一個新場景。越慢越省;每個場景會一直播放到下一個出現為止。",
       "default": "every 15 seconds",
       "options": [
         "as fast as possible",
